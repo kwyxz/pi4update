@@ -55,7 +55,7 @@ function git_dl {
 
 function copy_core {
   if [ -f ./${1}_libretro.so ]; then
-    cp ${1}_libretro.so "${SRCPATH}/libretro-super/dist/unix/"
+    cp ./${1}_libretro.so "${SRCPATH}/libretro-super/dist/unix/${1}_libretro.so"
   else
     print_c "error building ${1}"
   fi
@@ -67,6 +67,11 @@ function build_cores {
     case $core in
       'fbneo')
         git_dl "${SRCPATH}/libretro-super/libretro-fbneo" "${FBNEO_REPO}"
+	cd "${SRCPATH}/libretro-super/libretro-fbneo/"
+        git remote add upstream https://github.com/libretro/FBNeo.git
+        git fetch upstream
+        git merge upstream/master
+        git remote remove upstream
         cd "${SRCPATH}/libretro-super/libretro-fbneo/src/burner/libretro"
         make -f Makefile platform=rpi4
         copy_core ${core}
@@ -78,8 +83,7 @@ function build_cores {
         copy_core ${core}
         ;; 
       *)
-        ./libretro-fetch.sh "${core}"
-        ./libretro-build.sh "${core}"
+        SINGLE_CORE=${core} NOCLEAN=1 FORCE=yes ./libretro-buildbot-recipe.sh recipes/linux/cores-linux-arm7neonhf
         ;;
     esac
     sudo install -m 0644 -t ${RETROPATH} "${SRCPATH}/libretro-super/dist/info/${core}_libretro.info"
