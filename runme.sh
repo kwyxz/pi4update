@@ -98,7 +98,8 @@ function build_ra {
 
 function build_sfml {
   print_y " * building"
-  cd "${SRCPATH}/sfml-pi"
+  mkdir -p "${SRCPATH}/sfml-pi/build"
+  cd "${SRCPATH}/sfml-pi/build/"
   cmake .. -DSFML_DRM=1
   sudo make install
   sudo ldconfig
