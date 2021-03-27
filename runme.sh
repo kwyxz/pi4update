@@ -70,7 +70,7 @@ function build_cores {
 	cd "${SRCPATH}/libretro-super/libretro-fbneo/"
         git remote add upstream https://github.com/libretro/FBNeo.git
         git fetch upstream
-        git merge upstream/master
+        git merge --no-edit upstream/master
         git remote remove upstream
         cd "${SRCPATH}/libretro-super/libretro-fbneo/src/burner/libretro"
         make -f Makefile platform=rpi4
