@@ -3,6 +3,8 @@
 This is the script I use to keep my Raspberry-Pi-4-based bartop arcade.
 Releasing it to the public in case there's interest, but with no warranty that it will work for you.
 
+Confirmed working fine on Raspbian 10.11
+
 It will :
 - update the system (Raspbian)
 - download, build / update the tools
