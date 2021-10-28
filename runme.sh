@@ -3,12 +3,15 @@
 ### Configuration settings
 
 SUPER_REPO="https://github.com/libretro/libretro-super.git"
-FBNEO_REPO="https://github.com/kwyxz/FBNeo.git"
+FBNEO_REPO="https://github.com/libretro/FBNeo.git"
 RA_REPO="https://github.com/libretro/RetroArch.git"
 SFML_REPO="https://github.com/mickelson/sfml-pi.git"
 ATTRACT_REPO="https://github.com/mickelson/attract.git"
 SRCPATH="/usr/local/src"
 RETROPATH="/usr/local/lib/libretro"
+REDREAM_URL="https://redream.io/download"
+REDREAM_TMP="/tmp/redream.tar.gz"
+REDREAMPATH="/usr/local/lib/redream"
 PWD="$(pwd)"
 
 ### Generic functions
@@ -54,8 +57,8 @@ function git_dl {
 }
 
 function copy_core {
-  if [ -f ./${1}_libretro.so ]; then
-    cp ./${1}_libretro.so "${SRCPATH}/libretro-super/dist/unix/${1}_libretro.so"
+  if [ -f ${1}_libretro.so ]; then
+    cp ${1}_libretro.so "${SRCPATH}/libretro-super/dist/unix/${1}_libretro.so"
   else
     print_c "error building ${1}"
   fi
@@ -63,27 +66,23 @@ function copy_core {
 
 function build_cores {
   for core in 'fbneo' 'mame2003_plus' 'neocd' 'pcsx_rearmed'; do
+    print_y "* building ${core}"
     cd "${SRCPATH}/libretro-super"
     case $core in
       'fbneo')
         git_dl "${SRCPATH}/libretro-super/libretro-fbneo" "${FBNEO_REPO}"
-	cd "${SRCPATH}/libretro-super/libretro-fbneo/"
-        git remote add upstream https://github.com/libretro/FBNeo.git
-        git fetch upstream
-        git merge --no-edit upstream/master
-        git remote remove upstream
         cd "${SRCPATH}/libretro-super/libretro-fbneo/src/burner/libretro"
-        make -f Makefile platform=rpi4
+        make -j4 -f Makefile platform=rpi4_64
         copy_core ${core}
         ;;
       'pcsx_rearmed')
         ./libretro-fetch.sh "${core}"
         cd "${SRCPATH}/libretro-super/libretro-${core}"
-        make -f Makefile.libretro platform=rpi4
+        make -j4 -f Makefile.libretro platform=rpi4
         copy_core ${core}
         ;; 
       *)
-        SINGLE_CORE=${core} NOCLEAN=1 FORCE=yes ./libretro-buildbot-recipe.sh recipes/linux/cores-linux-arm7neonhf
+        SINGLE_CORE=${core} NOCLEAN=0 FORCE=yes ./libretro-buildbot-recipe.sh recipes/linux/cores-linux-arm7neonhf
         ;;
     esac
     sudo install -m 0644 -t ${RETROPATH} "${SRCPATH}/libretro-super/dist/info/${core}_libretro.info"
@@ -93,15 +92,24 @@ function build_cores {
 }
 
 function build_ra {
-  print_y " * building"
+  print_y " * building RetroArch"
   cd "${SRCPATH}/retroarch"
-  ./configure --disable-d3d9 --disable-d3dx --disable-dinput --disable-discord --disable-dsound --disable-ffmpeg --disable-gdi --disable-hid --disable-ibxm --disable-jack --disable-langextra --disable-materialui --disable-miniupnpc --disable-netplaydiscovery --disable-networkgamepad --disable-networking --disable-online_updater --disable-opengl --disable-opengl1 --disable-oss --disable-parport --disable-pulse --disable-qt --disable-rgui --disable-roar --disable-rsound --disable-runahead --disable-screenshots --disable-sdl --disable-sdl2 --disable-sixel --disable-ssa --disable-translate --disable-v4l2 --disable-vg --disable-videocore --disable-videoprocessor --disable-wasapi --disable-wayland --disable-winmm --disable-x11 --disable-xaudio --disable-xinerama --disable-xmb --disable-xrandr --disable-xshm --disable-xvideo --enable-kms --enable-opengl_core --enable-opengles --enable-opengles3 --enable-plain_drm --enable-debug
-  make && sudo make install
+  ./configure --disable-d3d9 --disable-d3dx --disable-dinput --disable-discord --disable-dsound --disable-ffmpeg --disable-gdi --disable-hid --disable-ibxm --disable-jack --disable-langextra --disable-materialui --disable-miniupnpc --disable-netplaydiscovery --disable-networkgamepad --disable-networking --disable-online_updater --disable-opengl --disable-opengl1 --disable-oss --disable-parport --disable-pulse --disable-qt --disable-rgui --disable-roar --disable-rsound --disable-runahead --disable-screenshots --disable-sdl --disable-sdl2 --disable-sixel --disable-ssa --disable-translate --disable-v4l2 --disable-vg --disable-videocore --disable-videoprocessor --disable-wasapi --disable-wayland --disable-winmm --disable-x11 --disable-xaudio --disable-xinerama --disable-xmb --disable-xrandr --disable-xshm --disable-xvideo --enable-kms --enable-opengl_core --enable-opengles --enable-opengles3 --enable-plain_drm --disable-debug
+  make -j4 && sudo make install
   cd "${PWD}"
 }
 
+function redream_update {
+  print_y " * downloading Redream"
+  rm -f ${REDREAM_TMP}
+  REDREAM_DEV="$(curl -s ${REDREAM_URL} | grep raspberry | grep -- "v.\..\..-.*-.*\.tar\.gz" | head -1 | cut -d '"' -f2 | cut -d '/' -f3)"
+  curl -s ${REDREAM_URL}/${REDREAM_DEV} -o ${REDREAM_TMP}
+  print_y "* installing Redream"
+  tar zxf ${REDREAM_TMP} -C ${REDREAMPATH}/
+}
+
 function build_sfml {
-  print_y " * building"
+  print_y " * building SFML"
   mkdir -p "${SRCPATH}/sfml-pi/build"
   cd "${SRCPATH}/sfml-pi/build/"
   cmake .. -DSFML_DRM=1
@@ -111,15 +119,15 @@ function build_sfml {
 }
 
 function build_attract {
-  print_y " * building"
+  print_y " * building Attract-Mode"
   cd "${SRCPATH}/attract"
-  make USE_DRM=1 USE_MMAL=1
+  make -j4 USE_DRM=1 USE_MMAL=1
   sudo make install USE_DRM=1 USE_MMAL=1
   cd "${PWD}"
 }
 
 function tools_update {
-  for src in 'libretro-super' 'retroarch' 'sfml-pi' 'attract'; do
+  for src in 'libretro-super' 'retroarch' 'redream' 'sfml-pi' 'attract'; do
     print_b "=> ${src}"
     case ${src} in
       'libretro-super')
@@ -129,6 +137,9 @@ function tools_update {
       'retroarch')
         git_dl "${SRCPATH}/${src}" "${RA_REPO}"
         build_ra
+        ;;
+      'redream')
+        redream_update
         ;;
       'sfml-pi')
         git_dl "${SRCPATH}/${src}" "${SFML_REPO}"
