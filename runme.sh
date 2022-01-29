@@ -94,7 +94,7 @@ function build_cores {
 function build_ra {
   print_y " * building RetroArch"
   cd "${SRCPATH}/retroarch"
-  ./configure --disable-d3d9 --disable-d3dx --disable-dinput --disable-discord --disable-dsound --disable-ffmpeg --disable-gdi --disable-hid --disable-ibxm --disable-jack --disable-langextra --disable-materialui --disable-miniupnpc --disable-netplaydiscovery --disable-networkgamepad --disable-networking --disable-online_updater --disable-opengl --disable-opengl1 --disable-oss --disable-parport --disable-pulse --disable-qt --disable-rgui --disable-roar --disable-rsound --disable-runahead --disable-screenshots --disable-sdl --disable-sdl2 --disable-sixel --disable-ssa --disable-translate --disable-v4l2 --disable-vg --disable-videocore --disable-videoprocessor --disable-wasapi --disable-wayland --disable-winmm --disable-x11 --disable-xaudio --disable-xinerama --disable-xmb --disable-xrandr --disable-xshm --disable-xvideo --enable-kms --enable-opengl_core --enable-opengles --enable-opengles3 --enable-plain_drm --disable-debug
+  ./configure --disable-d3d9 --disable-d3dx --disable-dinput --disable-discord --disable-dsound --disable-ffmpeg --disable-gdi --disable-hid --disable-ibxm --disable-jack --disable-langextra --disable-materialui --disable-netplaydiscovery --disable-networkgamepad --disable-networking --disable-online_updater --disable-opengl --disable-opengl1 --disable-oss --disable-parport --disable-pulse --disable-qt --disable-rgui --disable-roar --disable-rsound --disable-runahead --disable-screenshots --disable-sdl --disable-sdl2 --disable-sixel --disable-ssa --disable-translate --disable-v4l2 --disable-vg --disable-videocore --disable-videoprocessor --disable-wasapi --disable-wayland --disable-winmm --disable-x11 --disable-xaudio --disable-xinerama --disable-xmb --disable-xrandr --disable-xshm --disable-xvideo --enable-kms --enable-opengl_core --enable-opengles --enable-opengles3 --enable-plain_drm --disable-debug
   make -j4 && sudo make install
   cd "${PWD}"
 }
@@ -112,7 +112,7 @@ function build_sfml {
   print_y " * building SFML"
   mkdir -p "${SRCPATH}/sfml-pi/build"
   cd "${SRCPATH}/sfml-pi/build/"
-  cmake .. -DSFML_DRM=1
+  cmake .. -DSFML_DRM=1 -DOpenGL_GL_PREFERENCE=GLVND
   sudo make install
   sudo ldconfig
   cd "${PWD}"
