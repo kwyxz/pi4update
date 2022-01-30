@@ -7,6 +7,8 @@ FBNEO_REPO="https://github.com/libretro/FBNeo.git"
 RA_REPO="https://github.com/libretro/RetroArch.git"
 SFML_REPO="https://github.com/mickelson/sfml-pi.git"
 ATTRACT_REPO="https://github.com/mickelson/attract.git"
+HYPSEUS_REPO="https://github.com/DirtBagXon/hypseus-singe.git"
+HYPSEUS_PATH="/usr/local/lib/hypseus"
 SRCPATH="/usr/local/src"
 RETROPATH="/usr/local/lib/libretro"
 REDREAM_URL="https://redream.io/download"
@@ -106,11 +108,23 @@ function redream_update {
   curl -s ${REDREAM_URL}/${REDREAM_DEV} -o ${REDREAM_TMP}
   print_y "* installing Redream"
   tar zxf ${REDREAM_TMP} -C ${REDREAMPATH}/
+  cd "${PWD}"
+}
+
+function build_hypseus {
+  print_y " * building Hypseus Singe"
+  cd "${SRCPATH}/hypseus" && git checkout RetroPie
+  rm -rf "${SRCPATH}/hypseus/build" && mkdir -p "${SRCPATH}/hypseus/build" && cd "${SRCPATH}/hypseus/build"
+  cmake ../src
+  make -j4
+  print_y "* installing Hypseus Singe"
+  sudo cp "${SRCPATH}/hypseus/build/hypseus" "${HYPSEUSPATH}/hypseus"
+  cd "${PWD}"
 }
 
 function build_sfml {
   print_y " * building SFML"
-  mkdir -p "${SRCPATH}/sfml-pi/build"
+  rm -rf "${SRCPATH}/sfml-pi/build" && mkdir -p "${SRCPATH}/sfml-pi/build"
   cd "${SRCPATH}/sfml-pi/build/"
   cmake .. -DSFML_DRM=1 -DOpenGL_GL_PREFERENCE=GLVND
   sudo make install
@@ -121,13 +135,14 @@ function build_sfml {
 function build_attract {
   print_y " * building Attract-Mode"
   cd "${SRCPATH}/attract"
+  make clean
   make -j4 USE_DRM=1 USE_MMAL=1
   sudo make install USE_DRM=1 USE_MMAL=1
   cd "${PWD}"
 }
 
 function tools_update {
-  for src in 'libretro-super' 'retroarch' 'redream' 'sfml-pi' 'attract'; do
+  for src in 'libretro-super' 'retroarch' 'redream' 'hypseus' 'sfml-pi' 'attract'; do
     print_b "=> ${src}"
     case ${src} in
       'libretro-super')
@@ -140,6 +155,10 @@ function tools_update {
         ;;
       'redream')
         redream_update
+        ;;
+      'hypseus')
+        git_dl "${SRCPATH}/${src}" "${HYPSEUS_REPO}"
+        build_hypseus
         ;;
       'sfml-pi')
         git_dl "${SRCPATH}/${src}" "${SFML_REPO}"
