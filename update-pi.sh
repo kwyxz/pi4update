@@ -6,7 +6,8 @@ SUPER_REPO="https://github.com/libretro/libretro-super.git"
 FBNEO_REPO="https://github.com/libretro/FBNeo.git"
 RA_REPO="https://github.com/libretro/RetroArch.git"
 SFML_REPO="https://github.com/mickelson/sfml-pi.git"
-ATTRACT_REPO="https://github.com/mickelson/attract.git"
+#ATTRACT_REPO="https://github.com/mickelson/attract.git"
+ATTRACT_REPO="https://github.com/oomek/attractplus.git"
 HYPSEUS_REPO="https://github.com/DirtBagXon/hypseus-singe.git"
 HYPSEUS_PATH="/usr/local/lib/hypseus"
 SRCPATH="/usr/local/src"
@@ -116,9 +117,7 @@ function build_hypseus {
   cd "${SRCPATH}/hypseus" && git checkout RetroPie
   rm -rf "${SRCPATH}/hypseus/build" && mkdir -p "${SRCPATH}/hypseus/build" && cd "${SRCPATH}/hypseus/build"
   cmake ../src
-  make -j4
-  print_y "* installing Hypseus Singe"
-  sudo cp "${SRCPATH}/hypseus/build/hypseus" "${HYPSEUSPATH}/hypseus"
+  make -j4 && print_y "* installing Hypseus Singe" && sudo cp "${SRCPATH}/hypseus/build/hypseus" "${HYPSEUSPATH}/hypseus"
   cd "${PWD}"
 }
 
@@ -126,23 +125,21 @@ function build_sfml {
   print_y " * building SFML"
   rm -rf "${SRCPATH}/sfml-pi/build" && mkdir -p "${SRCPATH}/sfml-pi/build"
   cd "${SRCPATH}/sfml-pi/build/"
-  cmake .. -DSFML_DRM=1 -DOpenGL_GL_PREFERENCE=GLVND
-  sudo make install
-  sudo ldconfig
+  cmake .. -DSFML_DRM=1 -DOpenGL_GL_PREFERENCE=GLVND && sudo make install && sudo ldconfig
   cd "${PWD}"
 }
 
 function build_attract {
-  print_y " * building Attract-Mode"
-  cd "${SRCPATH}/attract"
+  sudo apt install libexpat1-dev
+  print_y " * building Attract-Mode Plus"
+  cd "${SRCPATH}/attractplus"
   make clean
-  make -j4 USE_DRM=1 USE_MMAL=1
-  sudo make install USE_DRM=1 USE_MMAL=1
+  make -j4 USE_DRM=1 USE_MMAL=1 && sudo make install USE_DRM=1 USE_MMAL=1
   cd "${PWD}"
 }
 
 function tools_update {
-  for src in 'libretro-super' 'retroarch' 'redream' 'hypseus' 'sfml-pi' 'attract'; do
+  for src in 'libretro-super' 'retroarch' 'redream' 'hypseus' 'sfml-pi' 'attractplus'; do
     print_b "=> ${src}"
     case ${src} in
       'libretro-super')
@@ -164,7 +161,7 @@ function tools_update {
         git_dl "${SRCPATH}/${src}" "${SFML_REPO}"
         build_sfml
         ;;
-      'attract')
+      'attractplus')
         git_dl "${SRCPATH}/${src}" "${ATTRACT_REPO}"
         build_attract
         ;;
