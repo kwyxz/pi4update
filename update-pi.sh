@@ -55,7 +55,7 @@ function git_dl {
   if [ -d "${1}" ]; then
     git -C "${1}" pull --recurse-submodules
   else
-    git clone --recursive "${2}" "${1}"
+    git clone --depth=1 --recursive "${2}" "${1}"
   fi
 }
 
