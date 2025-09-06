@@ -3,9 +3,11 @@
 ### Configuration settings
 
 SUPER_REPO="https://github.com/libretro/libretro-super.git"
+# separate fbneo repo as I needed to patch it at some point
+# keeping as is in case I need to fork and patch again
 FBNEO_REPO="https://github.com/libretro/FBNeo.git"
 RA_REPO="https://github.com/libretro/RetroArch.git"
-SFML_REPO="https://github.com/mickelson/sfml-pi.git"
+#SFML_REPO="https://github.com/mickelson/sfml-pi.git"
 #ATTRACT_REPO="https://github.com/mickelson/attract.git"
 ATTRACT_REPO="https://github.com/oomek/attractplus.git"
 HYPSEUS_REPO="https://github.com/DirtBagXon/hypseus-singe.git"
@@ -81,11 +83,11 @@ function build_cores {
       'pcsx_rearmed')
         ./libretro-fetch.sh "${core}"
         cd "${SRCPATH}/libretro-super/libretro-${core}"
-        make -j4 -f Makefile.libretro platform=rpi4
+        make -j4 -f Makefile.libretro platform=rpi4_64
         copy_core ${core}
         ;; 
       *)
-        SINGLE_CORE=${core} NOCLEAN=0 FORCE=yes ./libretro-buildbot-recipe.sh recipes/linux/cores-linux-arm7neonhf
+        ./libretro-build.sh ${core}
         ;;
     esac
     sudo install -m 0644 -t ${RETROPATH} "${SRCPATH}/libretro-super/dist/info/${core}_libretro.info"
@@ -96,6 +98,7 @@ function build_cores {
 
 function build_ra {
   print_y " * building RetroArch"
+  sudo apt -y install libgles-dev libegl-dev libopengl-dev libgl-dev libasound2-dev libpipewire-0.3-dev libdrm-dev
   cd "${SRCPATH}/retroarch"
   ./configure --disable-d3d9 --disable-d3dx --disable-dinput --disable-discord --disable-dsound --disable-ffmpeg --disable-gdi --disable-hid --disable-ibxm --disable-jack --disable-langextra --disable-materialui --disable-netplaydiscovery --disable-networkgamepad --disable-opengl --disable-opengl1 --disable-oss --disable-parport --disable-pulse --disable-qt --disable-rgui --disable-roar --disable-rsound --disable-runahead --disable-screenshots --disable-sdl --disable-sdl2 --disable-sixel --disable-ssa --disable-translate --disable-v4l2 --disable-vg --disable-videocore --disable-videoprocessor --disable-wasapi --disable-wayland --disable-winmm --disable-x11 --disable-xaudio --disable-xinerama --disable-xmb --disable-xrandr --disable-xshm --disable-xvideo --enable-kms --enable-opengl_core --enable-opengles --enable-opengles3 --enable-opengles3_1 --enable-plain_drm --disable-debug
   make -j4 && sudo make install
@@ -105,15 +108,18 @@ function build_ra {
 function redream_update {
   print_y " * downloading Redream"
   rm -f ${REDREAM_TMP}
+  sudo mkdir -p ${REDREAMPATH}
   REDREAM_DEV="$(curl -s ${REDREAM_URL} | grep raspberry | grep -- "v.\..\..-.*-.*\.tar\.gz" | head -1 | cut -d '"' -f2 | cut -d '/' -f3)"
   curl -s ${REDREAM_URL}/${REDREAM_DEV} -o ${REDREAM_TMP}
   print_y "* installing Redream"
-  tar zxf ${REDREAM_TMP} -C ${REDREAMPATH}/
+  sudo tar zxf ${REDREAM_TMP} -C ${REDREAMPATH}/
   cd "${PWD}"
 }
 
 function build_hypseus {
+  sudo apt -y install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libmpeg2-4-dev libzip-dev
   print_y " * building Hypseus Singe"
+  sudo mkdir -p ${HYPSEUSPATH}
   cd "${SRCPATH}/hypseus" && git checkout RetroPie
   rm -rf "${SRCPATH}/hypseus/build" && mkdir -p "${SRCPATH}/hypseus/build" && cd "${SRCPATH}/hypseus/build"
   cmake ../src
@@ -121,16 +127,16 @@ function build_hypseus {
   cd "${PWD}"
 }
 
-function build_sfml {
-  print_y " * building SFML"
-  rm -rf "${SRCPATH}/sfml-pi/build" && mkdir -p "${SRCPATH}/sfml-pi/build"
-  cd "${SRCPATH}/sfml-pi/build/"
-  cmake .. -DSFML_DRM=1 -DOpenGL_GL_PREFERENCE=GLVND && sudo make install && sudo ldconfig
-  cd "${PWD}"
-}
+#function build_sfml {
+#  print_y " * building SFML"
+#  rm -rf "${SRCPATH}/sfml-pi/build" && mkdir -p "${SRCPATH}/sfml-pi/build"
+#  cd "${SRCPATH}/sfml-pi/build/"
+#  cmake .. -DSFML_DRM=1 -DOpenGL_GL_PREFERENCE=GLVND && sudo make install && sudo ldconfig
+#  cd "${PWD}"
+#}
 
 function build_attract {
-  sudo apt install libexpat1-dev
+  sudo apt -y install libexpat1-dev
   print_y " * building Attract-Mode Plus"
   cd "${SRCPATH}/attractplus"
   make clean
@@ -157,10 +163,6 @@ function tools_update {
       'hypseus')
         git_dl "${SRCPATH}/${src}" "${HYPSEUS_REPO}"
         build_hypseus
-        ;;
-      'sfml-pi')
-        git_dl "${SRCPATH}/${src}" "${SFML_REPO}"
-        build_sfml
         ;;
       'attractplus')
         git_dl "${SRCPATH}/${src}" "${ATTRACT_REPO}"
