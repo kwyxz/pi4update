@@ -98,7 +98,7 @@ function build_cores {
 
 function build_ra {
   print_y " * building RetroArch"
-  sudo apt -y install libgles-dev libegl-dev libopengl-dev libgl-dev libasound2-dev libpipewire-0.3-dev libdrm-dev
+  sudo apt -y install libgles-dev libegl-dev libopengl-dev libgl-dev libasound2-dev libpipewire-0.3-dev libdrm-dev libfontconfig-dev libmbedtls-dev
   cd "${SRCPATH}/retroarch"
   ./configure --disable-d3d9 --disable-d3dx --disable-dinput --disable-discord --disable-dsound --disable-ffmpeg --disable-gdi --disable-hid --disable-ibxm --disable-jack --disable-langextra --disable-materialui --disable-netplaydiscovery --disable-networkgamepad --disable-opengl --disable-opengl1 --disable-oss --disable-parport --disable-pulse --disable-qt --disable-rgui --disable-roar --disable-rsound --disable-runahead --disable-screenshots --disable-sdl --disable-sdl2 --disable-sixel --disable-ssa --disable-translate --disable-v4l2 --disable-vg --disable-videocore --disable-videoprocessor --disable-wasapi --disable-wayland --disable-winmm --disable-x11 --disable-xaudio --disable-xinerama --disable-xmb --disable-xrandr --disable-xshm --disable-xvideo --enable-kms --enable-opengl_core --enable-opengles --enable-opengles3 --enable-opengles3_1 --enable-plain_drm --disable-debug
   make -j4 && sudo make install
@@ -117,11 +117,12 @@ function redream_update {
 }
 
 function build_hypseus {
-  sudo apt -y install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libmpeg2-4-dev libzip-dev
+  sudo apt -y install cmake libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libmpeg2-4-dev libzip-dev
   print_y " * building Hypseus Singe"
   sudo mkdir -p ${HYPSEUSPATH}
+  rm -rf "${SRCPATH}/hypseus/build"
   cd "${SRCPATH}/hypseus" && git checkout RetroPie
-  rm -rf "${SRCPATH}/hypseus/build" && mkdir -p "${SRCPATH}/hypseus/build" && cd "${SRCPATH}/hypseus/build"
+  mkdir -p "${SRCPATH}/hypseus/build" && cd "${SRCPATH}/hypseus/build"
   cmake ../src
   make -j4 && print_y "* installing Hypseus Singe" && sudo cp "${SRCPATH}/hypseus/build/hypseus" "${HYPSEUSPATH}/hypseus"
   cd "${PWD}"
@@ -140,11 +141,13 @@ function build_attract {
   print_y " * building Attract-Mode Plus"
   cd "${SRCPATH}/attractplus"
   make clean
-  make -j4 USE_DRM=1 USE_MMAL=1 && sudo make install USE_DRM=1 USE_MMAL=1
+  make -j4 USE_DRM=1 && sudo make install USE_DRM=1
   cd "${PWD}"
 }
 
 function tools_update {
+  sudo apt -y install armv8-support build-essential git pipewire rsync wireplumber
+  sudo apt -y install raspi-config raspi-firmware rpi-audio-utils rpi-splash-screen-support
   # removed 'sfml-pi' from the list as it's part of attractplus now
   for src in 'libretro-super' 'retroarch' 'redream' 'hypseus' 'attractplus'; do
     print_b "=> ${src}"
