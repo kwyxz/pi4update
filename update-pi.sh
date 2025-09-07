@@ -16,7 +16,7 @@ RETRO_PATH="/usr/local/lib/libretro"
 HYPSEUS_PATH="${SHARE_PATH}/hypseus"
 REDREAM_TMP="/tmp/redream.tar.gz"
 REDREAM_PATH="${SHARE_PATH}/redream"
-PWD="$(pwd)"
+SCRIPT_PATH="$(pwd)"
 
 ### Generic functions
 
@@ -56,7 +56,7 @@ function git_dl {
   if [ -d "${1}" ]; then
     git -C "${1}" pull --recurse-submodules
   else
-    git clone --depth=1 --recursive "${2}" "${1}"
+    git clone --recursive "${2}" "${1}"
   fi
 }
 
@@ -95,7 +95,7 @@ function build_cores {
     sudo install -m 0644 -t ${RETRO_PATH} "${SRC_PATH}/libretro-super/dist/info/${core}_libretro.info"
     sudo install -m 0755 -t ${RETRO_PATH} "${SRC_PATH}/libretro-super/dist/unix/${core}_libretro.so"
   done
-  cd "$PWD"
+  cd "${SCRIPT_PATH}"
 }
 
 function build_ra {
@@ -104,7 +104,7 @@ function build_ra {
   cd "${SRC_PATH}/retroarch"
   ./configure --disable-d3d9 --disable-d3dx --disable-dinput --disable-discord --disable-dsound --disable-ffmpeg --disable-gdi --disable-hid --disable-ibxm --disable-jack --disable-langextra --disable-materialui --disable-netplaydiscovery --disable-networkgamepad --disable-opengl --disable-opengl1 --disable-oss --disable-parport --disable-pulse --disable-qt --disable-rgui --disable-roar --disable-rsound --disable-runahead --disable-screenshots --disable-sdl --disable-sdl2 --disable-sixel --disable-ssa --disable-translate --disable-v4l2 --disable-vg --disable-videocore --disable-videoprocessor --disable-wasapi --disable-wayland --disable-winmm --disable-x11 --disable-xaudio --disable-xinerama --disable-xmb --disable-xrandr --disable-xshm --disable-xvideo --enable-kms --enable-opengl_core --enable-opengles --enable-opengles3 --enable-opengles3_1 --enable-plain_drm --disable-debug
   make -j4 && sudo make install
-  cd "${PWD}"
+  cd "${SCRIPT_PATH}"
 }
 
 function redream_update {
@@ -115,32 +115,35 @@ function redream_update {
   curl -s ${REDREAM_URL}/${REDREAM_DEV} -o ${REDREAM_TMP}
   print_y "* installing Redream"
   sudo tar zxf ${REDREAM_TMP} -C ${REDREAM_PATH}/
-  cd "${PWD}"
+  cd "${SCRIPT_PATH}"
 }
 
 function build_hypseus {
   sudo apt -y install cmake libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libmpeg2-4-dev libzip-dev
   print_y " * building Hypseus Singe"
-  sudo mkdir -p ${HYPSEUS_PATH}
+  sudo mkdir -p ${HYPSEUS_PATH} && sudo chown root:adm ${HYPSEUS_PATH} && sudo chmod 775 ${HYPSEUS_PATH}
   rm -rf "${SRC_PATH}/hypseus/build"
   cd "${SRC_PATH}/hypseus" && git checkout RetroPie
   mkdir -p "${SRC_PATH}/hypseus/build" && cd "${SRC_PATH}/hypseus/build"
   cmake ../src
-  make -j4 && print_y "* installing Hypseus Singe" && sudo install -m 0755 -t /usr/local/bin/hypseus.bin ${SRC_PATH}/hypseus/build/hypseus
-  rsync -avz --progress --inplace ${SRC_PATH}/hypseus/pics ${HYPSEUS_PATH}/
-  rsync -avz --progress --inplace ${SRC_PATH}/hypseus/sound ${HYPSEUS_PATH}/ 
-  rsync -avz --progress --inplace ${SRC_PATH}/hypseus/fonts ${HYPSEUS_PATH}/
-  rm -rf ${HYPSEUS_PATH}/roms
-  ln -sf ${HOME}/hypseus/roms ${HYPSEUS_PATH}/roms
-  sudo install -m 0755 -t "${PWD}/hypseus_launcher.sh" /usr/local/bin/hypseus_launcher.sh
-  sed -e 's,HYPSEUS_BIN=hypseus.bin,HYPSEUS_BIN=/usr/local/share/hypseus/hypseus,g' \
+  make -j4 && print_y "* installing Hypseus Singe" && sudo install -m 0755 -t /usr/local/bin/ ${SRC_PATH}/hypseus/build/hypseus
+  sudo mv /usr/local/bin/hypseus /usr/local/bin/hypseus.bin
+  sudo rsync -avz --progress --inplace ${SRC_PATH}/hypseus/pics ${HYPSEUS_PATH}/
+  sudo rsync -avz --progress --inplace ${SRC_PATH}/hypseus/sound ${HYPSEUS_PATH}/ 
+  sudo rsync -avz --progress --inplace ${SRC_PATH}/hypseus/fonts ${HYPSEUS_PATH}/
+  sudo rm -rf ${HYPSEUS_PATH}/roms ${HYPSEUS_PATH}/vldp ${HYPSEUS_PATH}/singe
+  sudo ln -sf ${HOME}/hypseus/roms ${HYPSEUS_PATH}/roms
+  sudo ln -sf ${HOME}/hypseus/vldp ${HYPSEUS_PATH}/vldp
+  sudo ln -sf ${HOME}/hypseus/singe ${HYPSEUS_PATH}/singe
+  sudo install -m 0755 -t /usr/local/bin/ "${SCRIPT_PATH}/hypseus-launcher.sh"
+  sed -e 's,HYPSEUS_BIN=hypseus.bin,HYPSEUS_BIN=/usr/local/bin/hypseus.bin,g' \
     -e 's,HYPSEUS_SHARE=~/.hypseus,HYPSEUS_SHARE=/usr/local/share/hypseus,g' \
     ${SRC_PATH}/hypseus/scripts/run.sh | sudo tee /usr/local/bin/hypseus
-  sed -e 's,HYPSEUS_BIN=hypseus.bin,HYPSEUS_BIN=/usr/local/share/hypseus/hypseus,g' \
+  sed -e 's,HYPSEUS_BIN=hypseus.bin,HYPSEUS_BIN=/usr/local/bin/hypseus.bin,g' \
     -e 's,HYPSEUS_SHARE=~/.hypseus,HYPSEUS_SHARE=/usr/local/share/hypseus,g' \
     ${SRC_PATH}/hypseus/scripts/singe.sh | sudo tee /usr/local/bin/singe
   sudo chmod 755 /usr/local/bin/hypseus /usr/local/bin/singe
-  cd "${PWD}"
+  cd "${SCRIPT_PATH}"
 }
 
 #function build_sfml {
@@ -148,7 +151,7 @@ function build_hypseus {
 #  rm -rf "${SRC_PATH}/sfml-pi/build" && mkdir -p "${SRC_PATH}/sfml-pi/build"
 #  cd "${SRC_PATH}/sfml-pi/build/"
 #  cmake .. -DSFML_DRM=1 -DOpenGL_GL_PREFERENCE=GLVND && sudo make install && sudo ldconfig
-#  cd "${PWD}"
+#  cd "${SCRIPT_PATH}"
 #}
 
 function build_attract {
@@ -157,7 +160,7 @@ function build_attract {
   cd "${SRC_PATH}/attractplus"
   make clean
   make -j4 USE_DRM=1 && sudo make install USE_DRM=1
-  cd "${PWD}"
+  cd "${SCRIPT_PATH}"
 }
 
 function tools_update {
