@@ -69,7 +69,9 @@ function copy_core {
 }
 
 function build_cores {
+  sudo mkdir -p ${RETRO_PATH} && sudo chown root:adm ${RETRO_PATH} && sudo chmod 775 ${RETRO_PATH}
   for core in 'fbneo' 'mame2003_plus' 'neocd' 'pcsx_rearmed'; do
+    mkdir -p /usr/local/lib/libretro
     print_y "* building ${core}"
     cd "${SRC_PATH}/libretro-super"
     case $core in
@@ -86,6 +88,7 @@ function build_cores {
         copy_core ${core}
         ;; 
       *)
+        ./libretro-fetch.sh ${core}
         ./libretro-build.sh ${core}
         ;;
     esac
