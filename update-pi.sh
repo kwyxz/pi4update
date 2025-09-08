@@ -108,13 +108,15 @@ function build_ra {
 }
 
 function redream_update {
+  sudo apt -y install pipewire-alsa
   print_y " * downloading Redream"
   rm -f ${REDREAM_TMP}
-  sudo mkdir -p ${REDREAM_PATH}
+  sudo mkdir -p ${REDREAM_PATH} && sudo chown root:adm ${REDREAM_PATH} && sudo chmod 775 ${REDREAM_PATH}
   REDREAM_DEV="$(curl -s ${REDREAM_URL} | grep raspberry | grep -- "v.\..\..-.*-.*\.tar\.gz" | head -1 | cut -d '"' -f2 | cut -d '/' -f3)"
   curl -s ${REDREAM_URL}/${REDREAM_DEV} -o ${REDREAM_TMP}
   print_y "* installing Redream"
   sudo tar zxf ${REDREAM_TMP} -C ${REDREAM_PATH}/
+  sudo rm /etc/asound.conf
   cd "${SCRIPT_PATH}"
 }
 
